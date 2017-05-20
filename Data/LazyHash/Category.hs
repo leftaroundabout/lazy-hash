@@ -13,6 +13,7 @@
 {-# LANGUAGE UndecidableInstances  #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE QuasiQuotes           #-}
 
@@ -34,6 +35,7 @@ import qualified Data.Hashable as SH
 
 
 instance Hash h => Category (LazilyHashableFunction h) where
+  type Object (LazilyHashableFunction h) a = Hashable h a
   id = [fundamental'|id|]
   LHF (Prehashed hf f) . LHF (Prehashed hg g)
        = lhf ([shash|.|] # hf # hg) (f . g)
@@ -48,7 +50,28 @@ instance Hash h => Cartesian (LazilyHashableFunction h) where
   regroup = [fundamental'|regroup|]
   regroup' = [fundamental'|regroup'|]
 
+instance Hash h => Curry (LazilyHashableFunction h) where
+  curry (LHF (Prehashed h f))
+     = LHF $ Prehashed ([shash|curry|]#h) $ LHF . Prehashed 0 . curry f
+  uncurry (LHF (Prehashed h f))
+     = LHF . Prehashed h . uncurry $ prehashedValue . getLHF . f
+
 instance Hash h
     => Functor (Prehashed h) (LazilyHashableFunction h) (LazilyHashableFunction h) where
   fmap (LHF (Prehashed hf f)) = lhf hff $ \(Prehashed hx x) -> Prehashed (hff # hx) $ f x
    where hff = [shash|fmap|] # hf
+
+instance Hash h
+    => Monoidal (Prehashed h) (LazilyHashableFunction h) (LazilyHashableFunction h) where
+  pureUnit = LHF (Prehashed [shash|pureUnit|] (Prehashed $ hash()))
+  fzipWith (LHF (Prehashed hf f)) = lhf hff
+      $ \(Prehashed hx x, Prehashed hy y) -> Prehashed (hff # hx # hy) $ f (x,y)
+   where hff = [shash|fzipWith|] # hf
+
+instance Hash h
+    => Applicative (Prehashed h) (LazilyHashableFunction h) (LazilyHashableFunction h) where
+  pure = LHF . Prehashed [shash|pure|] $ \v -> Prehashed (hash v) v
+
+instance Hash h => Monad (Prehashed h) (LazilyHashableFunction h) where
+  join = LHF . Prehashed [shash|join|] $ \(Prehashed h (Prehashed i a))
+                                      -> Prehashed ([shash|joined|] # h # i) a
