@@ -55,13 +55,6 @@ newtype LazilyHashableFunction h a b = LHF {
 
 type Hash' h = (Hashable h h, Hashable h String, Num h)
 
-instance Hash' h => Category (LazilyHashableFunction h) where
-  id = lhf defaultSalt id
-  LHF (Prehashed hf f) . LHF (Prehashed hg g)
-       = lhf (hashWithSalt hf hg) (f . g)
-
-lhf :: h -> (a->b) -> LazilyHashableFunction h a b
-lhf h = LHF . Prehashed h
 
 -- | Compute the hash of a string at compile-time.
 shash :: QuasiQuoter
@@ -75,10 +68,18 @@ shash = QuasiQuoter (return . ehash) undefined undefined undefined
 --   Applying this to anything but named, fixed-predefined values (standard library
 --   functions etc.) is probably a bad idea.
 fundamental :: QuasiQuoter
-fundamental = QuasiQuoter (return . fund) undefined undefined undefined
- where fund v = AppE (AppE (VarE 'Prehashed)
-                 (LitE . IntegerL . fromIntegral $ (hash v :: Int)))
+
+-- | 'fundamental' for single-argument functions (yields a 'LazilyHashableFunction'
+--   instead of a 'Prehashed').
+fundamental' :: QuasiQuoter
+
+(fundamental:fundamental':_)
+   = [ QuasiQuoter (return . wrap . fund) undefined undefined undefined
+     | wrap <- iterate (AppE (ConE 'LHF) .) id ]
+ where fund v = AppE (AppE (ConE 'Prehashed)
+                 (LitE . IntegerL $ fromIntegral (hash v :: Int)))
                  vParsed
         where vParsed = case parseExp v of
                   Right exp -> exp
                   Left perr -> error perr
+
