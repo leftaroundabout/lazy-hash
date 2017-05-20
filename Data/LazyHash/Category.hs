@@ -33,7 +33,7 @@ import Control.Monad.Constrained hiding (forM)
 import qualified Data.Hashable as SH
 
 
-instance Hash' h => Category (LazilyHashableFunction h) where
+instance Hash h => Category (LazilyHashableFunction h) where
   id = [fundamental'|id|]
   LHF (Prehashed hf f) . LHF (Prehashed hg g)
        = lhf ([shash|.|] # hf # hg) (f . g)
@@ -41,14 +41,14 @@ instance Hash' h => Category (LazilyHashableFunction h) where
 lhf :: h -> (a->b) -> LazilyHashableFunction h a b
 lhf h = LHF . Prehashed h
 
-instance Hash' h => Cartesian (LazilyHashableFunction h) where
+instance Hash h => Cartesian (LazilyHashableFunction h) where
   swap = [fundamental'|swap|]
   attachUnit = [fundamental'|attachUnit|]
   detachUnit = [fundamental'|detachUnit|]
   regroup = [fundamental'|regroup|]
   regroup' = [fundamental'|regroup'|]
 
-instance Hash' h
+instance Hash h
     => Functor (Prehashed h) (LazilyHashableFunction h) (LazilyHashableFunction h) where
   fmap (LHF (Prehashed hf f)) = lhf hff $ \(Prehashed hx x) -> Prehashed (hff # hx) $ f x
    where hff = [shash|fmap|] # hf

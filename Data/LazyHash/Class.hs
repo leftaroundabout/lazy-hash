@@ -25,15 +25,15 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import Language.Haskell.Meta.Parse
 
-class Hash h where
+class Hash' h where
   defaultSalt :: h
-instance Hash Int where
+instance Hash' Int where
   defaultSalt = -2578643520546668380
     -- same as http://hackage.haskell.org/package/hashable-1.2.6.0/docs/src/Data-Hashable-Class.html#hashWithSalt
     -- (on 64-bit)
 
 infixl 6 #
-class Hash h => Hashable h a where
+class Hash' h => Hashable h a where
   -- | Aka @hashWithSalt@.
   (#) :: h -> a -> h
 
@@ -53,7 +53,7 @@ newtype LazilyHashableFunction h a b = LHF {
     getLHF :: Prehashed h (a->b)
   }
 
-type Hash' h = (Hashable h h, Hashable h String, Num h)
+type Hash h = (Hashable h h, Hashable h String, Num h)
 
 
 -- | Compute the hash of a string at compile-time.
@@ -83,3 +83,11 @@ fundamental' :: QuasiQuoter
                   Right exp -> exp
                   Left perr -> error perr
 
+
+
+
+instance Hash h => Hashable h (Prehashed h a) where
+  h₀ # Prehashed h _ = h₀ # h
+
+instance Hash h => Hashable h (LazilyHashableFunction h a b) where
+  h₀ # LHF (Prehashed h _) = h₀ # h
