@@ -19,16 +19,6 @@
 module Data.LazyHash.Class where
 
 
-import qualified Prelude as Hask hiding(foldl, sum, sequence)
-import qualified Control.Applicative as Hask
-import qualified Data.Foldable       as Hask
-import Data.Foldable (all, elem, toList, sum, foldr1)
-
-import Control.Category.Constrained.Prelude hiding
-     ((^), all, elem, sum, forM, Foldable(..), foldr1, Traversable, traverse)
-import Control.Arrow.Constrained
-import Control.Monad.Constrained hiding (forM)
-
 import qualified Data.Hashable as SH
 
 import Language.Haskell.TH
@@ -42,14 +32,16 @@ instance Hash Int where
     -- same as http://hackage.haskell.org/package/hashable-1.2.6.0/docs/src/Data-Hashable-Class.html#hashWithSalt
     -- (on 64-bit)
 
+infixl 6 #
 class Hash h => Hashable h a where
-  hashWithSalt :: h -> a -> h
+  -- | Aka @hashWithSalt@.
+  (#) :: h -> a -> h
 
   hash :: a -> h
-  hash = hashWithSalt defaultSalt
+  hash = (#) defaultSalt
 
-instance Hashable Int Int where hashWithSalt = SH.hashWithSalt
-instance Hashable Int String where hashWithSalt = SH.hashWithSalt
+instance Hashable Int Int where (#) = SH.hashWithSalt
+instance Hashable Int String where (#) = SH.hashWithSalt
 
 
 data Prehashed h a = Prehashed {
@@ -71,6 +63,10 @@ instance Hash' h => Category (LazilyHashableFunction h) where
 lhf :: h -> (a->b) -> LazilyHashableFunction h a b
 lhf h = LHF . Prehashed h
 
+-- | Compute the hash of a string at compile-time.
+shash :: QuasiQuoter
+shash = QuasiQuoter (return . ehash) undefined undefined undefined
+ where ehash s = LitE . IntegerL $ fromIntegral (hash s :: Int)
 
 -- | Transform an ordinary value into a pre-hashed one. This hashes the /source code
 --   contained in the quasi quote/, assuming that the behaviour of anything invoked
