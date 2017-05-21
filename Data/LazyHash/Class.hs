@@ -95,3 +95,13 @@ instance Hash h => Hashable h (Prehashed h a) where
 
 instance Hash h => Hashable h (LazilyHashableFunction h a b) where
   h₀ # LHF (Prehashed h _) = h₀ # h
+
+
+strictHashed :: Hashable h a => a -> Prehashed h a
+strictHashed a = Prehashed (hash a) a
+
+liftPH :: Hash h => Prehashed h (a->b) -> Prehashed h a -> Prehashed h b
+liftPH (Prehashed hf f) (Prehashed ha a) = Prehashed (hf#ha) $ f a
+
+liftPH2 :: Hash h => Prehashed h (a->b->c) -> Prehashed h a->Prehashed h b->Prehashed h c
+liftPH2 (Prehashed hf f) (Prehashed ha a) (Prehashed hb b) = Prehashed (hf#ha#hb) $ f a b

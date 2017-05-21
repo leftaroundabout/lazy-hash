@@ -104,3 +104,5 @@ instance Hash h
 instance Hash h => Monad (Prehashed h) (LazilyHashableFunction h) where
   join = LHF . Prehashed 0 $ \(Prehashed h (Prehashed i a))
                                       -> Prehashed (h # i) a
+
+
