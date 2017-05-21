@@ -25,6 +25,8 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import Language.Haskell.Meta.Parse
 
+import Data.Void
+
 class Hash' h where
   defaultSalt :: h
 instance Hash' Int where
@@ -43,6 +45,7 @@ class Hash' h => Hashable h a where
 instance Hashable Int Int where (#) = SH.hashWithSalt
 instance Hashable Int String where (#) = SH.hashWithSalt
 instance Hashable Int () where (#) = SH.hashWithSalt
+instance Hashable Int Void where (#) = SH.hashWithSalt
 
 
 data Prehashed h a = Prehashed {
@@ -54,7 +57,7 @@ newtype LazilyHashableFunction h a b = LHF {
     getLHF :: Prehashed h (a->b)
   }
 
-type Hash h = (Hashable h h, Hashable h String, Hashable h (), Num h)
+type Hash h = (Hashable h h, Hashable h String, Hashable h (), Hashable h Void, Num h)
 
 
 -- | Compute the hash of a string at compile-time.

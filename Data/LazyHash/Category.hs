@@ -32,6 +32,7 @@ import Control.Arrow.Constrained
 import Control.Monad.Constrained hiding (forM)
 
 import qualified Data.Hashable as SH
+import Data.Tagged
 
 
 instance Hash h => Category (LazilyHashableFunction h) where
@@ -55,6 +56,36 @@ instance Hash h => Curry (LazilyHashableFunction h) where
      = LHF $ Prehashed ([shash|curry|]#h) $ LHF . Prehashed 0 . curry f
   uncurry (LHF (Prehashed h f))
      = LHF . Prehashed h . uncurry $ prehashedValue . getLHF . f
+
+instance Hash h => CoCartesian (LazilyHashableFunction h) where
+  coSwap = [fundamental'|coSwap|]
+  attachZero = [fundamental'|attachZero|]
+  detachZero = [fundamental'|detachZero|]
+  coRegroup = [fundamental'|coRegroup|]
+  coRegroup' = [fundamental'|coRegroup'|]
+  maybeAsSum = [fundamental'|maybeAsSum|]
+  maybeFromSum = [fundamental'|maybeFromSum|]
+  boolAsSum = [fundamental'|boolAsSum|]
+  boolFromSum = [fundamental'|boolFromSum|]
+
+instance Hash h => Morphism (LazilyHashableFunction h) where
+  LHF (Prehashed hf f) *** LHF (Prehashed hg g)
+       = lhf ([shash|***|] # hf # hg) (f *** g)
+
+instance Hash h => PreArrow (LazilyHashableFunction h) where
+  LHF (Prehashed hf f) &&& LHF (Prehashed hg g)
+       = lhf ([shash|&&&|] # hf # hg) (f &&& g)
+  terminal = [fundamental'|terminal|]
+  fst = [fundamental'|fst|]
+  snd = [fundamental'|snd|]
+
+instance Hash h => WellPointed (LazilyHashableFunction h) where
+  unit = Tagged ()
+  globalElement x = LHF . Prehashed ([shash|globalElement|] # x) $ const x
+  const x = LHF . Prehashed ([shash|const|] # x) $ const x
+
+instance Hash h => EnhancedCat (->) (LazilyHashableFunction h) where
+  arr = prehashedValue . getLHF
 
 instance Hash h
     => Functor (Prehashed h) (LazilyHashableFunction h) (LazilyHashableFunction h) where
