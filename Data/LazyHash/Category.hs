@@ -58,20 +58,18 @@ instance Hash h => Curry (LazilyHashableFunction h) where
 
 instance Hash h
     => Functor (Prehashed h) (LazilyHashableFunction h) (LazilyHashableFunction h) where
-  fmap (LHF (Prehashed hf f)) = lhf hff $ \(Prehashed hx x) -> Prehashed (hff # hx) $ f x
-   where hff = [shash|fmap|] # hf
+  fmap (LHF (Prehashed hf f)) = lhf hf $ \(Prehashed hx x) -> Prehashed (hf # hx) $ f x
 
 instance Hash h
     => Monoidal (Prehashed h) (LazilyHashableFunction h) (LazilyHashableFunction h) where
-  pureUnit = LHF (Prehashed [shash|pureUnit|] (Prehashed $ hash()))
-  fzipWith (LHF (Prehashed hf f)) = lhf hff
-      $ \(Prehashed hx x, Prehashed hy y) -> Prehashed (hff # hx # hy) $ f (x,y)
-   where hff = [shash|fzipWith|] # hf
+  pureUnit = LHF (Prehashed 0 (Prehashed $ hash()))
+  fzipWith (LHF (Prehashed hf f)) = lhf hf
+      $ \(Prehashed hx x, Prehashed hy y) -> Prehashed (hf # hx # hy) $ f (x,y)
 
 instance Hash h
     => Applicative (Prehashed h) (LazilyHashableFunction h) (LazilyHashableFunction h) where
-  pure = LHF . Prehashed [shash|pure|] $ \v -> Prehashed (hash v) v
+  pure = LHF . Prehashed 0 $ \v -> Prehashed (hash v) v
 
 instance Hash h => Monad (Prehashed h) (LazilyHashableFunction h) where
-  join = LHF . Prehashed [shash|join|] $ \(Prehashed h (Prehashed i a))
-                                      -> Prehashed ([shash|joined|] # h # i) a
+  join = LHF . Prehashed 0 $ \(Prehashed h (Prehashed i a))
+                                      -> Prehashed (h # i) a
