@@ -39,12 +39,18 @@ cachedWithin :: (Binary a, Binary h) => FilePath      -- ^ Storage directory
                                      -> IO a
 cachedWithin path (Prehashed h v) = do
    let fname = path </> (BS.unpack . B16.encode . BS.toStrict $ encode h) <.> ".lhbs"
---   putStrLn ("Cache file should be "++fname)
-   doesFileExist fname >>= \case
+   cachedValueInFile fname v
+
+cachedValueInFile :: Binary a
+      => FilePath      -- ^ File to store this value in.
+      -> a             -- ^ Value to cache
+      -> IO a
+cachedValueInFile fname v
+ = doesFileExist fname >>= \case
     True -> do
       vMemoized <- decodeFile fname
       return vMemoized
     False -> do 
-      createDirectoryIfMissing True path
+      createDirectoryIfMissing True $ takeDirectory fname
       encodeFile fname v
       return v
