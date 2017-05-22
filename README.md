@@ -18,17 +18,16 @@ actually different).
 
 ```bash
 $ echo '
-> {-# LANGUAGE QuasiQuotes, ScopedTypeVariables #-}
-> import Data.LazyHash.Class
+> {-# LANGUAGE QuasiQuotes #-}
 > import Data.LazyHash.Cache.Int
 > import Data.Numbers.Primes
 > import System.Environment
 > 
 > main :: IO ()
 > main = do
->    [n :: Prehashed Int Integer] <- map read <$> getArgs
+>    [n] <- map read <$> getArgs
 >    nDecomp <- cached $ liftPH [fundamental|primeFactors|] n
->    print nDecomp
+>    print (nDecomp :: [Integer])
 > ' > PrimeDecomposition.hs
 
 $ runhaskell PrimeDecomposition.hs 839876202089798609265694      # A
