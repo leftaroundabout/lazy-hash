@@ -8,7 +8,8 @@
 -- Portability : portable
 -- 
 
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase       #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Data.LazyHash.Cache where
 
@@ -21,24 +22,30 @@ import Data.Binary
 import System.FilePath
 import System.Directory
 
+import Data.Binary
+
+import Data.Typeable
+
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as BS (toStrict)
 
 import qualified Data.ByteString.Base16 as B16
 
-cached :: (Binary a, Binary h) => Prehashed h a -> IO a
+cached :: (Hash h, Binary a, Typeable a, Binary h) => Prehashed h a -> IO a
 cached = cachedWithin ".hscache/lazy-hashed"
 
-cachedTmp :: (Binary a, Binary h) => Prehashed h a -> IO a
+cachedTmp :: (Hash h, Binary a, Typeable a, Binary h) => Prehashed h a -> IO a
 cachedTmp v = do
    tmpRoot <- getTemporaryDirectory
    cachedWithin (tmpRoot</>"hs-lazy-hashed") v
 
-cachedWithin :: (Binary a, Binary h) => FilePath      -- ^ Storage directory
-                                     -> Prehashed h a -- ^ Value to cache
-                                     -> IO a
+cachedWithin :: (Hash h, Binary a, Typeable a, Binary h)
+                   => FilePath      -- ^ Storage directory
+                   -> Prehashed h a -- ^ Value to cache
+                   -> IO a
 cachedWithin path (Prehashed h v) = do
-   let fname = path </> (BS.unpack . B16.encode . BS.toStrict $ encode h) <.> ".lhbs"
+   let fname = path </> (BS.unpack . B16.encode . BS.toStrict . encode
+                           $ h # typeRep [v]) <.> ".lhbs"
    cachedValueInFile fname v
 
 cachedValueInFile :: Binary a

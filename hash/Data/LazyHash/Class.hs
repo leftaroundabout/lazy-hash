@@ -28,6 +28,7 @@ import Language.Haskell.Meta.Parse
 
 import Data.Void
 import Data.Foldable
+import Data.Typeable (TypeRep)
 
 class Hash' h where
   zeroHash :: h
@@ -62,6 +63,7 @@ instance Hashable Int Double where hash = SH.hash; (#) = SH.hashWithSalt
 instance Hashable Int Float where hash = SH.hash; (#) = SH.hashWithSalt
 instance Hashable Int Bool where hash = SH.hash; (#) = SH.hashWithSalt
 instance Hashable Int Char where hash = SH.hash; (#) = SH.hashWithSalt
+instance Hashable Int TypeRep where hash = SH.hash; (#) = SH.hashWithSalt
 
 instance Hashable h a => Hashable h [a] where (#) = foldl' (#)
 
@@ -92,7 +94,8 @@ newtype LazilyHashableFunction h a b = LHF {
     getLHF :: Prehashed h (a->b)
   }
 
-type Hash h = (Hashable h h, Hashable h String, Hashable h (), Hashable h Void, Num h)
+type Hash h = ( Hashable h h, Hashable h String, Hashable h ()
+              , Hashable h Void, Hashable h TypeRep, Num h )
 
 
 -- | Compute the hash of a string at compile-time.

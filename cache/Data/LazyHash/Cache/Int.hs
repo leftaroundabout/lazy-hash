@@ -27,23 +27,26 @@ import Data.Binary
 import System.FilePath
 import System.Directory
 
+import Data.Typeable
+
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as BS (toStrict)
 
 import Numeric (showHex) 
 import Data.Word (Word64) 
 
-cached :: Binary a => Prehashed Int a -> IO a
+cached :: (Binary a, Typeable a) => Prehashed Int a -> IO a
 cached = cachedWithin ".hscache/lazy-hashed"
 
-cachedTmp :: Binary a => Prehashed Int a -> IO a
+cachedTmp :: (Binary a, Typeable a) => Prehashed Int a -> IO a
 cachedTmp v = do
    tmpRoot <- getTemporaryDirectory
    cachedWithin (tmpRoot</>"hs-lazy-hashed") v
 
-cachedWithin :: Binary a => FilePath        -- ^ Storage directory
-                         -> Prehashed Int a -- ^ Value to cache
-                         -> IO a
+cachedWithin :: (Binary a, Typeable a)
+                    => FilePath        -- ^ Storage directory
+                    -> Prehashed Int a -- ^ Value to cache
+                    -> IO a
 cachedWithin path (Prehashed h v) = do
-   let fname = path </> showHex (fromIntegral h :: Word64) [] <.> ".lhbs"
+   let fname = path </> showHex (fromIntegral (h # typeRep [v]) :: Word64) [] <.> ".lhbs"
    cachedValueInFile fname v
