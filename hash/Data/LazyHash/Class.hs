@@ -30,6 +30,9 @@ import Data.Void
 import Data.Foldable
 import Data.Typeable (TypeRep)
 
+import Control.Arrow (first)
+
+
 class Hash' h where
   zeroHash :: h
   distinguisher :: h
@@ -143,3 +146,7 @@ liftPH (Prehashed hf f) (Prehashed ha a) = Prehashed (hf#ha) $ f a
 
 liftPH2 :: Hash h => Prehashed h (a->b->c) -> Prehashed h a->Prehashed h b->Prehashed h c
 liftPH2 (Prehashed hf f) (Prehashed ha a) (Prehashed hb b) = Prehashed (hf#ha#hb) $ f a b
+
+
+instance (Read a, Hashable h a) => Read (Prehashed h a) where
+  readsPrec p = map (first strictHashed) . readsPrec p
