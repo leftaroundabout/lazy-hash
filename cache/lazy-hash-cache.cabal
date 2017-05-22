@@ -17,6 +17,7 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     Data.LazyHash.Cache
+                       , Data.LazyHash.Cache.Int
   -- other-modules:       
   other-extensions:    MultiParamTypeClasses, CPP, UndecidableInstances, ConstraintKinds, FlexibleInstances, FlexibleContexts
   build-depends:       base >=4.8 && <4.9
