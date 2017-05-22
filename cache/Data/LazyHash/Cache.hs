@@ -11,7 +11,14 @@
 {-# LANGUAGE LambdaCase       #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Data.LazyHash.Cache where
+module Data.LazyHash.Cache (
+             -- * The caching actions
+               cached, cachedTmp, cachedWithin
+             -- * Prehashing tools
+             , fundamental, liftPH, liftPH2
+             -- * Internals
+             , cachedValueInFile
+                               ) where
 
 import Data.LazyHash.Class
 import Data.LazyHash.Numerical ()

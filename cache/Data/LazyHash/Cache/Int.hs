@@ -14,7 +14,12 @@
 
 {-# LANGUAGE LambdaCase #-}
 
-module Data.LazyHash.Cache.Int where
+module Data.LazyHash.Cache.Int (
+             -- * The caching actions
+               cached, cachedTmp, cachedWithin
+             -- * Prehashing tools
+             , fundamental, liftPH, liftPH2
+                               ) where
 
 import Data.LazyHash.Cache (cachedValueInFile)
 
