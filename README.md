@@ -26,7 +26,7 @@ $ echo '
 > main :: IO ()
 > main = do
 >    [n] <- map read <$> getArgs
->    nDecomp <- cached $ liftPH [fundamental|primeFactors|] n
+>    nDecomp <- cached $ [fundamental|primeFactors|] <#> n
 >    print (nDecomp :: [Integer])
 > ' > PrimeDecomposition.hs
 

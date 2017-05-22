@@ -15,7 +15,7 @@ module Data.LazyHash.Cache (
              -- * The caching actions
                cached, cachedTmp, cachedWithin
              -- * Prehashing tools
-             , fundamental, liftPH, liftPH2
+             , fundamental, (<#>), liftPH2
              -- * Internals
              , cachedValueInFile
                                ) where

@@ -18,7 +18,7 @@ module Data.LazyHash.Cache.Int (
              -- * The caching actions
                cached, cachedTmp, cachedWithin
              -- * Prehashing tools
-             , fundamental, liftPH, liftPH2
+             , fundamental, (<#>), liftPH2
                                ) where
 
 import Data.LazyHash.Cache (cachedValueInFile)
