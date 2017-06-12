@@ -28,13 +28,16 @@ import qualified Data.Hashable as SH
 import Data.Binary
 import System.FilePath
 import System.Directory
+import System.IO
+import System.IO.Temp
+import Control.Exception (bracket)
 
 import Data.Binary
 
 import Data.Typeable
 
-import qualified Data.ByteString.Char8 as BS
-import qualified Data.ByteString.Lazy as BS (toStrict)
+import qualified Data.ByteString.Char8 as BS hiding (hPut)
+import qualified Data.ByteString.Lazy as BS (toStrict, hPut)
 
 import qualified Data.ByteString.Base16 as B16
 
@@ -65,6 +68,15 @@ cachedValueInFile fname v
       vMemoized <- decodeFile fname
       return vMemoized
     False -> do 
-      createDirectoryIfMissing True $ takeDirectory fname
-      encodeFile fname v
+      let storageDir = takeDirectory fname
+          wipDir = storageDir</>"wip"
+      createDirectoryIfMissing True storageDir
+      createDirectoryIfMissing True wipDir
+      bracket
+        ( openBinaryTempFile wipDir (takeFileName fname++".") )
+        ( \(_, h) -> hClose h )
+        ( \(tmpFname, h) -> do
+            BS.hPut h $ encode v
+            renameFile tmpFname fname
+        )
       return v
