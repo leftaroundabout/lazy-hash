@@ -10,12 +10,18 @@
 
 {-# LANGUAGE LambdaCase       #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell  #-}
 
 module Data.LazyHash.Cache (
              -- * The caching actions
-               cached, cachedTmp, cachedWithin
+               cached, cached'
              -- * Prehashing tools
              , fundamental, (<#>), liftPH2
+             -- * Configuration
+             , CacheAccessConf, cachingLocation
+                              , usePrecalculated
+                              , calculateIfNecessary
+                              , burnAfterReading
              -- * Internals
              , cachedValueInFile
                                ) where
@@ -31,6 +37,7 @@ import System.Directory
 import System.IO
 import System.IO.Temp
 import Control.Exception (bracket)
+import Control.Monad
 
 import Data.Binary
 
@@ -41,42 +48,59 @@ import qualified Data.ByteString.Lazy as BS (toStrict, hPut)
 
 import qualified Data.ByteString.Base16 as B16
 
+import Data.Default.Class
+
+import Lens.Micro
+import Lens.Micro.TH
+
+data CacheAccessConf = CachAccConf {
+      _cachingLocation :: Maybe FilePath
+    , _usePrecalculated, _calculateIfNecessary
+    , _writeUsedVersion, _burnAfterReading :: Bool
+    }
+makeLenses ''CacheAccessConf
+instance Default CacheAccessConf where
+  def = CachAccConf (Just ".hscache/lazy-hashed") True True True False
+
 cached :: (Hash h, Binary a, Typeable a, Binary h) => Prehashed h a -> IO a
-cached = cachedWithin ".hscache/lazy-hashed"
+cached = cached' def
 
-cachedTmp :: (Hash h, Binary a, Typeable a, Binary h) => Prehashed h a -> IO a
-cachedTmp v = do
-   tmpRoot <- getTemporaryDirectory
-   cachedWithin (tmpRoot</>"hs-lazy-hashed") v
-
-cachedWithin :: (Hash h, Binary a, Typeable a, Binary h)
-                   => FilePath      -- ^ Storage directory
+cached' :: (Hash h, Binary a, Typeable a, Binary h)
+                   => CacheAccessConf
                    -> Prehashed h a -- ^ Value to cache
                    -> IO a
-cachedWithin path (Prehashed h v) = do
+cached' conf@(CachAccConf Nothing _ _ _ _) v = do
+   tmpRoot <- getTemporaryDirectory
+   cached' (conf & cachingLocation .~ Just (tmpRoot</>"hs-lazy-hashed")) v
+cached' conf@(CachAccConf (Just path) reuse calcNew writeUsed burnAfterReading)
+          (Prehashed h v) = do
    let fname = path </> (BS.unpack . B16.encode . BS.toStrict . encode
                            $ h # typeRep [v]) <.> ".lhbs"
-   cachedValueInFile fname v
+   cachedValueInFile conf fname v
 
 cachedValueInFile :: Binary a
-      => FilePath      -- ^ File to store this value in.
+      => CacheAccessConf
+      -> FilePath      -- ^ File to store this value in.
       -> a             -- ^ Value to cache
       -> IO a
-cachedValueInFile fname v
+cachedValueInFile (CachAccConf _ reuse calcNew writeUsed burn) fname v
  = doesFileExist fname >>= \case
-    True -> do
+    True | reuse -> do
       vMemoized <- decodeFile fname
+      when burn $ removeFile fname
       return vMemoized
-    False -> do 
-      let storageDir = takeDirectory fname
-          wipDir = storageDir</>"wip"
-      createDirectoryIfMissing True storageDir
-      createDirectoryIfMissing True wipDir
-      bracket
-        ( openBinaryTempFile wipDir (takeFileName fname++".") )
-        ( \(_, h) -> hClose h )
-        ( \(tmpFname, h) -> do
-            BS.hPut h $ encode v
-            renameFile tmpFname fname
-        )
+    _ | calcNew -> do 
+      when writeUsed $ do
+         let storageDir = takeDirectory fname
+             wipDir = storageDir</>"wip"
+         createDirectoryIfMissing True storageDir
+         createDirectoryIfMissing True wipDir
+         bracket
+           ( openBinaryTempFile wipDir (takeFileName fname++".") )
+           ( \(_, h) -> hClose h )
+           ( \(tmpFname, h) -> do
+               BS.hPut h $ encode v
+               renameFile tmpFname fname
+           )
       return v
+    False -> error "Requested value from cache that is not there. Perhaps enable `calculateIfNecessary`?"

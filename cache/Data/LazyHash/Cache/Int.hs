@@ -12,16 +12,18 @@
 -- <https://en.wikipedia.org/wiki/Birthday_problem likely> with this type once you store
 -- a considerable number of values, so don't use it for serious applications.
 
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase       #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Data.LazyHash.Cache.Int (
              -- * The caching actions
-               cached, cachedTmp, cachedWithin
+               cached, cached'
              -- * Prehashing tools
              , fundamental, (<#>), liftPH2
+             -- * Configuration
                                ) where
 
-import Data.LazyHash.Cache (cachedValueInFile)
+import Data.LazyHash.Cache hiding (cached, cached')
 
 import Data.LazyHash.Class
 import Data.LazyHash.Numerical ()
@@ -40,18 +42,20 @@ import qualified Data.ByteString.Lazy as BS (toStrict)
 import Numeric (showHex) 
 import Data.Word (Word64) 
 
+import Data.Default.Class
+import Lens.Micro
+
 cached :: (Binary a, Typeable a) => Prehashed Int a -> IO a
-cached = cachedWithin ".hscache/lazy-hashed"
+cached = cached' def
 
-cachedTmp :: (Binary a, Typeable a) => Prehashed Int a -> IO a
-cachedTmp v = do
+cached' :: (Binary a, Typeable a)
+                   => CacheAccessConf
+                   -> Prehashed Int a -- ^ Value to cache
+                   -> IO a
+cached' conf (Prehashed h v) = case conf^.cachingLocation of
+  Nothing -> do
    tmpRoot <- getTemporaryDirectory
-   cachedWithin (tmpRoot</>"hs-lazy-hashed") v
-
-cachedWithin :: (Binary a, Typeable a)
-                    => FilePath        -- ^ Storage directory
-                    -> Prehashed Int a -- ^ Value to cache
-                    -> IO a
-cachedWithin path (Prehashed h v) = do
+   cached' (conf & cachingLocation .~ Just (tmpRoot</>"hs-lazy-hashed")) (Prehashed h v)
+  Just path -> do
    let fname = path </> showHex (fromIntegral (h # typeRep [v]) :: Word64) [] <.> ".lhbs"
-   cachedValueInFile fname v
+   cachedValueInFile conf fname v
