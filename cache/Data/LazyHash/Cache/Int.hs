@@ -45,9 +45,11 @@ import Data.Word (Word64)
 import Data.Default.Class
 import Lens.Micro
 
+-- | Like 'Data.LazyHash.Cache.cached', but specialised to 'Int' hashes.
 cached :: (Binary a, Typeable a) => Prehashed Int a -> IO a
 cached = cached' def
 
+-- | Like 'Data.LazyHash.Cache.cached'', but specialised to 'Int' hashes.
 cached' :: (Binary a, Typeable a)
                    => CacheAccessConf
                    -> Prehashed Int a -- ^ Value to cache

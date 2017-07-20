@@ -106,9 +106,9 @@ shash :: QuasiQuoter
 shash = QuasiQuoter (return . ehash) undefined undefined undefined
  where ehash s = LitE . IntegerL $ fromIntegral (hash s :: Int)
 
--- | Transform an ordinary value into a pre-hashed one. This hashes the /source code
---   contained in the quasi quote/, assuming that the behaviour of anything invoked
---   therein will never change.
+-- | Transform an ordinary value into a pre-hashed one. This hashes the /source code/
+--   contained in the quasi quote, making the assumption that the behaviour of anything
+--   invoked therein will never change.
 -- 
 --   Applying this to anything but named, fixed-predefined values (standard library
 --   functions etc.) is probably a bad idea.
@@ -142,6 +142,8 @@ strictHashed :: Hashable h a => a -> Prehashed h a
 strictHashed a = Prehashed (hash a) a
 
 infixl 4 <#>
+-- | Analogous to 'Control.Applicative.<$>': apply a hash-supported function to a
+--   hash-supported value.
 (<#>) :: Hash h => Prehashed h (a->b) -> Prehashed h a -> Prehashed h b
 Prehashed hf f <#> Prehashed ha a = Prehashed (hf#ha) $ f a
 
