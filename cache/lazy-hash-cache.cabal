@@ -20,9 +20,9 @@ library
                        , Data.LazyHash.Cache.Int
   -- other-modules:       
   other-extensions:    MultiParamTypeClasses, CPP, UndecidableInstances, ConstraintKinds, FlexibleInstances, FlexibleContexts
-  build-depends:       base >=4.8 && <4.9
+  build-depends:       base >=4.8 && <4.11
                        , lazy-hash >=0.1 && <0.2, hashable >=1.2 && <1.3
-                       , binary >=0.7 && <0.8, bytestring >= 0.8 && < 0.14
+                       , binary >=0.7 && <0.10, bytestring >= 0.8 && < 0.14
                        , base16-bytestring >= 0.1 && < 0.7
                        , filepath >=1.2 && <1.5, directory >= 1.1 && <1.4
                        , temporary >= 1.2 && <1.3
