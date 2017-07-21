@@ -97,7 +97,7 @@ newtype LazilyHashableFunction h a b = LHF {
     getLHF :: Prehashed h (a->b)
   }
 
-type Hash h = ( Hashable h h, Hashable h String, Hashable h ()
+type Hash h = ( Hashable h h, Hashable h Char, Hashable h ()
               , Hashable h Void, Hashable h TypeRep, Num h )
 
 
