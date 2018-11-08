@@ -142,4 +142,5 @@ cachedValueInFile (CachAccConf _ reuse calcNew writeUsed burn) fname v
                renameFile tmpFname fname
            )
       return v
-    False -> error "Requested value from cache that is not there. Perhaps enable `calculateIfNecessary`?"
+    False -> error $ "Requested value from cache "++takeFileName fname
+                  ++" that is not there.\nPerhaps enable `calculateIfNecessary`?"
