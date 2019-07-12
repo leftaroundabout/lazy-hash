@@ -12,7 +12,7 @@ description:         This package gives a way to assign values with largely
 license:             GPL-3
 license-file:        LICENSE
 author:              Justus Sagemüller
-maintainer:          (@) jsagemue $ uni-koeln.de
+maintainer:          (@) jsag $ hvl.no
 -- copyright:           
 category:            Data
 build-type:          Simple
